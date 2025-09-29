@@ -82,7 +82,6 @@ const EducatorDashboard = () => {
   const [students, setStudents] = useState<Student[]>(mockStudents);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showAlertDialog, setShowAlertDialog] = useState(false);
-  const [showCharts, setShowCharts] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -238,10 +237,6 @@ const EducatorDashboard = () => {
                       <Mail className="h-4 w-4 mr-2" />
                       Send Caring Updates
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setShowCharts(!showCharts)}>
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      {showCharts ? 'Hide' : 'Show'} Charts
-                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -284,18 +279,6 @@ const EducatorDashboard = () => {
                     />
                   ))}
                 </div>
-
-                {showCharts && filteredStudents.length > 0 && (
-                  <div className="mt-8 space-y-6">
-                    <h3 className="text-lg font-semibold">Student Performance Analytics</h3>
-                    {filteredStudents.slice(0, 3).map(student => (
-                      <div key={`chart-${student.id}`} className="border-t pt-6">
-                        <h4 className="text-md font-medium mb-4">{student.name} - Detailed Analytics</h4>
-                        <StudentCharts student={student} />
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 {filteredStudents.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">

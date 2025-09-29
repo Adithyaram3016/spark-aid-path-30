@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RiskBadge, { RiskLevel } from "./RiskBadge";
+import StudentCharts from "./StudentCharts";
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -16,7 +17,8 @@ import {
   BookOpen,
   Heart,
   Mail,
-  MessageCircle
+  MessageCircle,
+  BarChart3
 } from "lucide-react";
 
 export interface Student {
@@ -39,6 +41,7 @@ interface StudentCardProps {
 
 const StudentCard = ({ student, onSendAlert }: StudentCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [contacted, setContacted] = useState(false);
   const [counselorAssigned, setCounselorAssigned] = useState(false);
   const [noteAdded, setNoteAdded] = useState(false);
@@ -192,7 +195,27 @@ const StudentCard = ({ student, onSendAlert }: StudentCardProps) => {
                   Send Caring Message
                 </Button>
               )}
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="flex items-center gap-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAnalytics(!showAnalytics);
+                }}
+              >
+                <BarChart3 className="h-3 w-3" />
+                {showAnalytics ? "Hide Analytics" : "Show Analytics"}
+              </Button>
             </div>
+
+            {/* Performance Analytics */}
+            {showAnalytics && (
+              <div className="mt-6 border-t pt-4">
+                <h4 className="text-md font-medium mb-4">Performance Analytics</h4>
+                <StudentCharts student={student} />
+              </div>
+            )}
 
             <div className="mt-3 text-xs text-muted-foreground">
               Last contact: {student.lastContact}
