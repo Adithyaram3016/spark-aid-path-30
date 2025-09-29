@@ -1,9 +1,17 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import RiskBadge from "@/components/RiskBadge";
+import { useStudentData } from "@/hooks/useStudentData";
+import { PaymentDialog } from "@/components/PaymentDialog";
+import { BookingDialog } from "@/components/BookingDialog";
+import { ResourcesDialog } from "@/components/ResourcesDialog";
+import { ScheduleDialog } from "@/components/ScheduleDialog";
+import { AchievementsDialog } from "@/components/AchievementsDialog";
+import { useToast } from "@/hooks/use-toast";
 import { 
   LogOut, 
   Calendar, 
@@ -13,7 +21,10 @@ import {
   Target,
   MessageCircle,
   Award,
-  Clock
+  Clock,
+  Phone,
+  Mail,
+  Video
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
@@ -86,6 +97,26 @@ const studentData = {
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { 
+    student, 
+    feePayments, 
+    counselingSessions, 
+    tutoringSessions, 
+    studyResources, 
+    schedule, 
+    achievements, 
+    loading, 
+    refetch 
+  } = useStudentData();
+
+  // Dialog states
+  const [paymentDialog, setPaymentDialog] = useState<{ open: boolean; payment: any }>({ open: false, payment: null });
+  const [counselingDialog, setCounselingDialog] = useState(false);
+  const [tutoringDialog, setTutoringDialog] = useState(false);
+  const [resourcesDialog, setResourcesDialog] = useState(false);
+  const [scheduleDialog, setScheduleDialog] = useState(false);
+  const [achievementsDialog, setAchievementsDialog] = useState(false);
 
   const getRecommendationColor = (type: string) => {
     switch (type) {
@@ -105,6 +136,72 @@ const StudentDashboard = () => {
     }
   };
 
+  // Handler functions for button actions
+  const handlePayNow = () => {
+    const pendingPayment = feePayments.find(p => p.status === 'pending');
+    if (pendingPayment) {
+      setPaymentDialog({ open: true, payment: pendingPayment });
+    } else {
+      toast({
+        title: "No Pending Payments",
+        description: "You have no pending fee payments at this time.",
+      });
+    }
+  };
+
+  const handleContactCounselor = () => {
+    toast({
+      title: "Contact Options",
+      description: "Choose your preferred contact method",
+    });
+    // Open contact options menu
+  };
+
+  const handleStudyResources = () => {
+    setResourcesDialog(true);
+  };
+
+  const handleViewSchedule = () => {
+    setScheduleDialog(true);
+  };
+
+  const handleAchievements = () => {
+    setAchievementsDialog(true);
+  };
+
+  const handleBookCounseling = () => {
+    setCounselingDialog(true);
+  };
+
+  const handleBookTutoring = () => {
+    setTutoringDialog(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Student Profile Not Found</h1>
+          <p className="text-muted-foreground mb-4">Please complete your profile setup first.</p>
+          <Button onClick={() => navigate("/")}>Go Home</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const pendingFees = feePayments.filter(p => p.status === 'pending');
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -112,11 +209,11 @@ const StudentDashboard = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Welcome back, {studentData.name}</h1>
-              <p className="text-muted-foreground">{studentData.class} • {studentData.id}</p>
+              <h1 className="text-2xl font-bold text-foreground">Welcome back, {student.first_name} {student.last_name}</h1>
+              <p className="text-muted-foreground">{student.class} • {student.student_id}</p>
             </div>
             <div className="flex items-center gap-4">
-              <RiskBadge level={studentData.riskLevel} />
+              <RiskBadge level="moderate" />
               <Button 
                 variant="outline" 
                 onClick={() => navigate("/")}
@@ -143,12 +240,12 @@ const StudentDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold">{studentData.attendance.percentage}%</span>
+                  <span className="text-2xl font-bold">78%</span>
                   <span className="text-sm text-muted-foreground">
-                    {studentData.attendance.present}/{studentData.attendance.total} days
+                    156/200 days
                   </span>
                 </div>
-                <Progress value={studentData.attendance.percentage} className="h-2" />
+                <Progress value={78} className="h-2" />
                 <p className="text-xs text-muted-foreground">
                   Target: 85% • Need to improve by 7%
                 </p>
@@ -166,13 +263,13 @@ const StudentDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold">{studentData.academics.avgScore}%</span>
+                  <span className="text-2xl font-bold">72%</span>
                   <Badge variant="outline" className="text-success border-success">
                     <TrendingUp className="h-3 w-3 mr-1" />
                     Stable
                   </Badge>
                 </div>
-                <Progress value={studentData.academics.avgScore} className="h-2" />
+                <Progress value={72} className="h-2" />
                 <p className="text-xs text-muted-foreground">
                   Last 4 tests average • Target: 80%
                 </p>
@@ -190,13 +287,25 @@ const StudentDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold">${studentData.fees.amount}</span>
+                  <span className="text-2xl font-bold">
+                    ${pendingFees.length > 0 ? pendingFees[0].amount : '0'}
+                  </span>
                   <Badge className="bg-gradient-warning text-warning-foreground">
-                    {studentData.fees.status.toUpperCase()}
+                    {pendingFees.length > 0 ? 'PENDING' : 'PAID'}
                   </Badge>
                 </div>
-                <p className="text-sm">Due: {studentData.fees.dueDate}</p>
-                <Button size="sm" className="w-full bg-gradient-warning">
+                <p className="text-sm">
+                  {pendingFees.length > 0 
+                    ? `Due: ${new Date(pendingFees[0].due_date).toLocaleDateString()}`
+                    : 'No pending payments'
+                  }
+                </p>
+                <Button 
+                  size="sm" 
+                  className="w-full bg-gradient-warning"
+                  onClick={handlePayNow}
+                  disabled={pendingFees.length === 0}
+                >
                   Pay Now
                 </Button>
               </div>
@@ -284,7 +393,19 @@ const StudentDashboard = () => {
                     <div className="flex-1">
                       <h4 className="font-semibold mb-1">{rec.title}</h4>
                       <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          if (rec.action === "Meet with counselor") {
+                            handleBookCounseling();
+                          } else if (rec.action === "Book tutoring session") {
+                            handleBookTutoring();
+                          } else if (rec.action === "Make payment") {
+                            handlePayNow();
+                          }
+                        }}
+                      >
                         {rec.action}
                       </Button>
                     </div>
@@ -297,24 +418,124 @@ const StudentDashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button className="h-20 flex flex-col gap-2 bg-gradient-primary">
+          <Button 
+            className="h-20 flex flex-col gap-2 bg-gradient-primary"
+            onClick={handleContactCounselor}
+          >
             <MessageCircle className="h-6 w-6" />
             <span>Contact Counselor</span>
           </Button>
-          <Button variant="outline" className="h-20 flex flex-col gap-2">
+          <Button 
+            variant="outline" 
+            className="h-20 flex flex-col gap-2"
+            onClick={handleStudyResources}
+          >
             <BookOpen className="h-6 w-6" />
             <span>Study Resources</span>
           </Button>
-          <Button variant="outline" className="h-20 flex flex-col gap-2">
+          <Button 
+            variant="outline" 
+            className="h-20 flex flex-col gap-2"
+            onClick={handleViewSchedule}
+          >
             <Calendar className="h-6 w-6" />
             <span>View Schedule</span>
           </Button>
-          <Button variant="outline" className="h-20 flex flex-col gap-2">
+          <Button 
+            variant="outline" 
+            className="h-20 flex flex-col gap-2"
+            onClick={handleAchievements}
+          >
             <Award className="h-6 w-6" />
             <span>Achievements</span>
           </Button>
         </div>
+
+        {/* Contact Options */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Counselor Contact Options
+            </CardTitle>
+            <CardDescription>
+              Multiple ways to reach your academic counselor
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Button 
+                variant="outline" 
+                className="h-16 flex flex-col gap-2"
+                onClick={() => window.open('mailto:counselor@school.edu', '_blank')}
+              >
+                <Mail className="h-5 w-5" />
+                <span className="text-sm">Send Email</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-16 flex flex-col gap-2"
+                onClick={() => window.open('tel:+1234567890', '_blank')}
+              >
+                <Phone className="h-5 w-5" />
+                <span className="text-sm">Call Direct</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-16 flex flex-col gap-2"
+                onClick={handleBookCounseling}
+              >
+                <Video className="h-5 w-5" />
+                <span className="text-sm">Book Session</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Dialogs */}
+      {paymentDialog.open && paymentDialog.payment && (
+        <PaymentDialog
+          open={paymentDialog.open}
+          onOpenChange={(open) => setPaymentDialog({ open, payment: null })}
+          payment={paymentDialog.payment}
+          onSuccess={refetch}
+        />
+      )}
+
+      <BookingDialog
+        open={counselingDialog}
+        onOpenChange={setCounselingDialog}
+        type="counseling"
+        studentId={student.id}
+        onSuccess={refetch}
+      />
+
+      <BookingDialog
+        open={tutoringDialog}
+        onOpenChange={setTutoringDialog}
+        type="tutoring"
+        studentId={student.id}
+        onSuccess={refetch}
+      />
+
+      <ResourcesDialog
+        open={resourcesDialog}
+        onOpenChange={setResourcesDialog}
+        resources={studyResources}
+      />
+
+      <ScheduleDialog
+        open={scheduleDialog}
+        onOpenChange={setScheduleDialog}
+        schedule={schedule}
+      />
+
+      <AchievementsDialog
+        open={achievementsDialog}
+        onOpenChange={setAchievementsDialog}
+        achievements={achievements}
+      />
     </div>
   );
 };
